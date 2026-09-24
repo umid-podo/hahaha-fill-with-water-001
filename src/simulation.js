@@ -2,7 +2,7 @@ import { CONFIG as C } from './config.js';
 
 // The event clock is independent of render frames. Every packet owns its lane.
 export class Simulation {
-  constructor() {
+  constructor({ lemonAt = randomLemonAt(), lemonOffset = 1 + Math.floor(Math.random() * 2) } = {}) {
     this.time = 0;
     this.score = 0;
     this.cupLane = 1;
@@ -19,8 +19,17 @@ export class Simulation {
     this.packets = [];
     this.events = [];
     this.packetId = 0;
+    // Lemons drop in a lane away from the water, so catching them means leaving the stream.
+    this.lemonAt = lemonAt;
+    this.lemonOffset = lemonOffset;
+    this.lemonLane = null;
+    this.lemonsEmitted = 0;
+    this.lemons = [];
+    this.lemonsCaught = 0;
     this.finished = false;
   }
+  get nextLemonAt() { return this.lemonsEmitted < C.lemonCount ? this.lemonAt + this.lemonsEmitted * C.lemonIntervalMs : Infinity; }
+  get dirtyHits() { return this.penalizedBurstIds.size; }
   get sourceLocked() { return this.burst && this.time < this.burst.end; }
   get dirtyAvailable() { return !this.finished && this.dirtyUsesRemaining > 0 && this.time >= this.dirtyReadyAt; }
   get dirtyState() {
@@ -61,12 +70,14 @@ export class Simulation {
     let inputsApplied = false;
     while (true) {
       const next = Math.min(this.cupMove?.end ?? Infinity, this.nextEmissionAt,
-        this.packets[0]?.arrivesAt ?? Infinity, inputsApplied ? Infinity : target);
+        this.packets[0]?.arrivesAt ?? Infinity, this.nextLemonAt, this.lemons[0]?.arrivesAt ?? Infinity,
+        inputsApplied ? Infinity : target);
       if (next > target) break;
       this.time = next;
       if (next >= C.roundMs) {
         this.finished = true;
         this.packets = [];
+        this.lemons = [];
         break;
       }
       if (this.cupMove && this.cupMove.end === next) {
@@ -86,6 +97,10 @@ export class Simulation {
           emittedAt: next, arrivesAt: next + C.flightMs, volumeMl: C.volumeMl, burstId: dirty ? this.burst.id : null });
         this.nextEmissionAt += C.emissionMs;
       }
+      if (this.nextLemonAt === next) {
+        this.lemonLane ??= (this.sourceLane + this.lemonOffset) % 3;
+        this.lemons.push({ id: ++this.lemonsEmitted, lane: this.lemonLane, emittedAt: next, arrivesAt: next + C.lemonFlightMs });
+      }
       while (this.packets[0]?.arrivesAt === next) {
         const packet = this.packets.shift();
         if (packet.lane !== this.cupLane) continue;
@@ -99,8 +114,19 @@ export class Simulation {
           this.events.push({ type: 'hit', at: next, lane: packet.lane });
         }
       }
+      while (this.lemons[0]?.arrivesAt === next) {
+        const lemon = this.lemons.shift();
+        if (lemon.lane !== this.cupLane) continue;
+        this.lemonsCaught++;
+        this.events.push({ type: 'lemon', at: next, lane: lemon.lane });
+      }
     }
     this.time = target;
     this.events = this.events.filter(event => target - event.at < 600);
   }
+}
+
+export function randomLemonAt(random = Math.random) {
+  const span = (C.lemonLatestMs - C.lemonEarliestMs) / C.emissionMs;
+  return C.lemonEarliestMs + Math.floor(random() * (span + 1)) * C.emissionMs;
 }

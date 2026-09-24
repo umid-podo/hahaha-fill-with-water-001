@@ -1,6 +1,16 @@
-export function installInput({ command, pause }) {
+// Keys belong to a seat, not a role: the left friend keeps A S D (W) and the right
+// friend keeps the arrows (↑) after roles switch. main.js resolves the current role.
+export const SEAT_KEYS = [
+  { lanes: ['A', 'S', 'D'], dirty: 'W' },
+  { lanes: ['←', '↓', '→'], dirty: '↑' },
+];
+export function installInput({ command, seatCommand, pause }) {
   const held = new Set();
-  const keyMap = { KeyA: ['cup', 0], KeyS: ['cup', 1], KeyD: ['cup', 2], ArrowLeft: ['source', 0], ArrowDown: ['source', 1], ArrowRight: ['source', 2], Space: ['dirty'] };
+  const keyMap = {
+    KeyA: [0, 'lane', 0], KeyS: [0, 'lane', 1], KeyD: [0, 'lane', 2], KeyW: [0, 'dirty'],
+    ArrowLeft: [1, 'lane', 0], ArrowDown: [1, 'lane', 1], ArrowRight: [1, 'lane', 2], ArrowUp: [1, 'dirty'],
+    Space: [null, 'dirty'],
+  };
   window.addEventListener('keydown', event => {
     if (event.target instanceof HTMLInputElement || document.querySelector('dialog[open]')) return;
     if (event.code === 'Escape') { event.preventDefault(); if (!event.repeat) pause(); return; }
@@ -9,7 +19,8 @@ export function installInput({ command, pause }) {
     if (!document.querySelector('#game').hidden) event.preventDefault();
     if (event.repeat || held.has(event.code)) return;
     held.add(event.code);
-    command(...mapped);
+    const [seat, action, lane] = mapped;
+    if (seat === null) command(action); else seatCommand(seat, action, lane);
   });
   window.addEventListener('keyup', event => held.delete(event.code));
   for (const button of document.querySelectorAll('[data-command]')) {

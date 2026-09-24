@@ -181,6 +181,41 @@
       "width": 128,
       "height": 96,
       "type": "svg"
+    },
+    {
+      "id": "drink",
+      "path": "endings/drink.svg",
+      "width": 240,
+      "height": 240,
+      "type": "svg"
+    },
+    {
+      "id": "lemon",
+      "path": "endings/lemon.svg",
+      "width": 240,
+      "height": 240,
+      "type": "svg"
+    },
+    {
+      "id": "dirty",
+      "path": "endings/dirty.svg",
+      "width": 240,
+      "height": 240,
+      "type": "svg"
+    },
+    {
+      "id": "clean",
+      "path": "endings/clean.svg",
+      "width": 240,
+      "height": 240,
+      "type": "svg"
+    },
+    {
+      "id": "lemon",
+      "path": "fx/lemon.svg",
+      "width": 64,
+      "height": 64,
+      "type": "svg"
     }
   ]
 }
