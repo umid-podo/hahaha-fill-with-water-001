@@ -1,10 +1,12 @@
 import { CONFIG as C } from './config.js';
 import { Match } from './state.js';
 import { Renderer, loadAssets } from './render.js';
-import { installInput } from './input.js';
+import { installInput, SEAT_KEYS } from './input.js';
+import { BACKGROUNDS, drawBackground } from './backgrounds.js';
 const $ = id => document.getElementById(id);
 const colors = { sunny: ['노랑', '#f5ca62'], coral: ['코랄', '#f29b89'], sky: ['하늘', '#a3d9e8'] };
 let chosenColors = ['sunny', 'coral'];
+let chosenBackground = 'kitchen';
 let match, renderer, phase = 'setup', previousPhase, countdown = 0, lastFrame = performance.now();
 let saved;
 try { saved = JSON.parse(localStorage.getItem('water-friends')); } catch { /* Storage is optional. */ }
@@ -13,6 +15,25 @@ if (Array.isArray(saved) && saved.length === 2) saved.forEach((p, i) => {
   if (typeof p.name === 'string') $(`name-${i}`).value = p.name.slice(0, 12);
   if (Object.hasOwn(colors, p.color)) chosenColors[i] = p.color;
 });
+try {
+  const background = localStorage.getItem('water-background');
+  if (Object.hasOwn(BACKGROUNDS, background)) chosenBackground = background;
+} catch { /* Storage is optional. */ }
+for (const [key, { label }] of Object.entries(BACKGROUNDS)) {
+  const button = document.createElement('button');
+  button.type = 'button'; button.className = 'background-option'; button.dataset.background = key;
+  button.setAttribute('role', 'radio'); button.setAttribute('aria-label', `${label} 배경`);
+  const preview = document.createElement('canvas'); preview.width = 480; preview.height = 270;
+  const ctx = preview.getContext('2d'); ctx.scale(0.5, 0.5); drawBackground(ctx, key);
+  const name = document.createElement('span'); name.textContent = label;
+  button.append(preview, name);
+  button.addEventListener('click', () => { chosenBackground = key; updateBackgrounds(); });
+  $('background-picker').append(button);
+}
+function updateBackgrounds() {
+  $('background-picker').querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', b.dataset.background === chosenBackground));
+}
+updateBackgrounds();
 for (const picker of document.querySelectorAll('.color-picker')) {
   const player = Number(picker.dataset.player);
   picker.setAttribute('role', 'radiogroup'); picker.setAttribute('aria-label', `친구 ${player + 1} 컵 색`);
@@ -34,17 +55,35 @@ function updateColors() {
   });
 }
 updateColors();
-for (const [id, type, keys] of [['cup-controls', 'cup', ['A', 'S', 'D']], ['source-controls', 'source', ['←', '↓', '→']]]) {
+for (const [id, type] of [['cup-controls', 'cup'], ['source-controls', 'source']]) {
   ['left', 'center', 'right'].forEach((direction, lane) => {
     const button = document.createElement('button'); button.className = 'lane-button';
     button.dataset.command = type; button.dataset.lane = lane;
-    button.setAttribute('aria-label', `${type === 'cup' ? '컵' : '물줄기'} ${['왼쪽', '가운데', '오른쪽'][lane]} (${keys[lane]})`);
-    button.innerHTML = `<img src="assets/ui/lane-${direction}.svg" alt=""><span>${['좌', '중앙', '우'][lane]}</span><kbd>${keys[lane]}</kbd>`;
+    button.innerHTML = `<img src="assets/ui/lane-${direction}.svg" alt=""><span>${['좌', '중앙', '우'][lane]}</span><kbd></kbd>`;
     $(id).append(button);
   });
 }
 $('dirty-button').dataset.command = 'dirty';
-const input = installInput({ command, pause });
+const input = installInput({ command, seatCommand, pause });
+// A seat's keys and panel side never move; only the role behind them changes.
+function seatCommand(seat, action, lane) {
+  if (!match) return;
+  if (action === 'lane') command(seat === match.receiver ? 'cup' : 'source', lane);
+  else if (action === 'dirty' && seat === match.disruptor) command('dirty');
+}
+function applySeats() {
+  // Friend 1 always sits on the left, so the receiver panel moves when friend 2 receives.
+  $('control-panels').classList.toggle('swapped', match.receiver === 1);
+  const receiverKeys = SEAT_KEYS[match.receiver].lanes, disruptorKeys = SEAT_KEYS[match.disruptor];
+  for (const [id, type, keys] of [['cup-controls', '컵', receiverKeys], ['source-controls', '물줄기', disruptorKeys.lanes]]) {
+    $(id).querySelectorAll('button').forEach((button, lane) => {
+      button.setAttribute('aria-label', `${type} ${['왼쪽', '가운데', '오른쪽'][lane]} (${keys[lane]})`);
+      button.querySelector('kbd').textContent = keys[lane];
+    });
+  }
+  $('dirty-key').textContent = `${disruptorKeys.dirty} · SPACE`;
+  $('dirty-button').setAttribute('aria-label', `똥물 (${disruptorKeys.dirty} 또는 Space)`);
+}
 function screen(id) { ['setup', 'game', 'result'].forEach(name => $(name).hidden = name !== id); }
 function focusHeading() { const heading = $('result').querySelector('h1'); heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
 function startMatch(players, startingPlayer = 0) {
@@ -57,12 +96,17 @@ function beginCountdown() {
   $('round-label').textContent = `ROUND 0${match.roundIndex + 1} / 02`;
   $('receiver-label').textContent = `${receiver.name}의 도전`;
   $('receiver-name').textContent = receiver.name; $('disruptor-name').textContent = disruptor.name;
+  applySeats();
   updateGame();
 }
 $('setup-form').addEventListener('submit', event => {
   event.preventDefault(); if (!renderer || phase !== 'setup') return;
   const players = [0, 1].map(i => ({ name: $(`name-${i}`).value.trim() || `친구 ${i + 1}`, color: chosenColors[i] }));
-  try { localStorage.setItem('water-friends', JSON.stringify(players)); } catch { /* Play without persistence. */ }
+  try {
+    localStorage.setItem('water-friends', JSON.stringify(players));
+    localStorage.setItem('water-background', chosenBackground);
+  } catch { /* Play without persistence. */ }
+  renderer.background = chosenBackground;
   startMatch(players);
 });
 function command(type, lane) {
@@ -96,7 +140,7 @@ function updateGame() {
   document.querySelectorAll('[data-command="source"]').forEach(b => {
     b.disabled = phase !== 'playing' || Boolean(sim.sourceLocked) || sim.time < sim.sourceMoveReadyAt;
     b.setAttribute('aria-pressed', Number(b.dataset.lane) === sim.sourceLane);
-    b.querySelector('kbd').textContent = sim.sourceLocked ? '잠금' : sim.time < sim.sourceMoveReadyAt ? `${((sim.sourceMoveReadyAt - sim.time) / 1000).toFixed(1)}s` : ['←', '↓', '→'][Number(b.dataset.lane)];
+    b.querySelector('kbd').textContent = sim.sourceLocked ? '잠금' : sim.time < sim.sourceMoveReadyAt ? `${((sim.sourceMoveReadyAt - sim.time) / 1000).toFixed(1)}s` : SEAT_KEYS[match.disruptor].lanes[Number(b.dataset.lane)];
   });
   $('source-status').textContent = sim.sourceLocked ? '똥물 발사까지 위치 고정!' : sim.time < sim.sourceMoveReadyAt ? `${((sim.sourceMoveReadyAt - sim.time) / 1000).toFixed(1)}초 뒤 이동` : '물줄기를 옮겨요!';
   $('dirty-button').disabled = phase !== 'playing' || !sim.dirtyAvailable;
@@ -106,7 +150,7 @@ function updateGame() {
     $('arena-message').dataset.count = count;
     $('arena-message').replaceChildren();
     if (count) {
-      const label = document.createElement('small'); label.textContent = `${match.players[match.receiver].name} · A S D로 물 받기`;
+      const label = document.createElement('small'); label.textContent = `${match.players[match.receiver].name} · ${SEAT_KEYS[match.receiver].lanes.join(' ')}로 물 받기`;
       $('arena-message').append(label, document.createTextNode(count));
     }
   }
@@ -135,27 +179,48 @@ $('quit-button').addEventListener('click', () => { $('pause-dialog').close(); go
 $('help-button').addEventListener('click', () => { pause(); $('help-dialog').showModal(); });
 $('help-close').addEventListener('click', () => $('help-dialog').close());
 function goHome() { phase = 'setup'; match = null; input.clear(); screen('setup'); $('start-button').focus(); }
+const endings = {
+  lemon: { alt: '레몬에 반해 하트 눈이 된 친구', caption: (name, r) => `${name}, 비밀 레몬을 ${r.lemons}개나 먹었어요! 새콤달콤 사랑에 빠졌어요 ♥` },
+  dirty: { alt: '똥물을 마시고 깜짝 놀란 친구', caption: (name, r) => `${name}, 우웩! 똥물을 ${r.dirtyHits}번이나 마셔 버렸어요…` },
+  clean: { alt: '엄지를 들고 활짝 웃는 친구', caption: name => `${name}, 똥물 없이 깨끗한 물만 꿀꺽! 엄지 척!` },
+};
+// The receiver drinks the cup ("아~"), then reacts according to what went in.
+function endingStage(player) {
+  const result = match.results[player];
+  const stage = document.createElement('div'); stage.className = `ending-stage ending-${result.ending}`;
+  const drink = document.createElement('img'); drink.className = 'ending-drink'; drink.src = 'assets/endings/drink.svg'; drink.alt = '';
+  const reaction = document.createElement('img'); reaction.className = 'ending-reaction'; reaction.src = `assets/endings/${result.ending}.svg`; reaction.alt = endings[result.ending].alt;
+  stage.append(drink, reaction);
+  const caption = document.createElement('p'); caption.className = 'ending-caption';
+  caption.textContent = endings[result.ending].caption(match.players[player].name, result);
+  return [stage, caption];
+}
 // Player names are always assigned through textContent, never interpolated as markup.
 function endRound() {
   match.finishRound(); phase = match.roundIndex === 0 ? 'round-result' : 'match-result'; input.clear(); screen('result');
   const roundResult = phase === 'round-result';
-  $('result').innerHTML = `<div class="result-illustration"><img class="result-friend" src="assets/characters/friend-idle.png" alt="축하하는 동그란 친구">${roundResult ? '' : '<img class="result-crown" src="assets/ui/winner-crown.svg" alt="우승 왕관">'}</div><div class="eyebrow">${roundResult ? 'HALF TIME · SWITCH IT UP' : 'GOOD GAME · WELL PLAYED'}</div><h1></h1><p class="result-description"></p><div class="result-cards"></div><div class="result-actions"></div>`;
+  $('result').innerHTML = `<div class="result-illustration"></div><div class="eyebrow">${roundResult ? 'HALF TIME · SWITCH IT UP' : 'GOOD GAME · WELL PLAYED'}</div><h1></h1><p class="result-description"></p><div class="result-cards"></div><div class="result-actions"></div>`;
+  $('result').querySelector('.result-illustration').append(...endingStage(match.receiver));
   $('result').querySelector('h1').textContent = roundResult ? '이번엔 역할 바꾸기!' : match.winner === null ? '둘 다 최고! 공동 우승' : `${match.players[match.winner].name} 승리!`;
-  $('result').querySelector('.result-description').textContent = roundResult ? `${match.players[match.receiver].name}, ${match.sim.score.toLocaleString()}mL를 받았어요! 두 친구 모두 준비하면 다음 라운드를 시작해요.` : '한 방울 한 방울, 멋진 승부였어요. 한 판 더 해볼까요?';
+  $('result').querySelector('.result-description').textContent = roundResult ? `${match.players[match.receiver].name}, ${match.sim.score.toLocaleString()}mL를 받았어요! 자리는 그대로, 두 친구 모두 준비하면 다음 라운드를 시작해요.` : '한 방울 한 방울, 멋진 승부였어요. 한 판 더 해볼까요?';
   match.players.forEach((player, i) => {
     const card = document.createElement('article'); card.className = 'result-card';
-    if (!roundResult && (match.winner === i || match.winner === null)) card.classList.add('winner');
+    const winner = !roundResult && (match.winner === i || match.winner === null);
+    if (winner) card.classList.add('winner');
     const image = document.createElement('img'); image.src = `assets/props/cup-${player.color}.svg`; image.alt = `${colors[player.color][0]} 컵`; image.className = 'mini-cup';
     const name = document.createElement('h2'); name.textContent = player.name;
     card.append(image, name);
     if (roundResult) {
-      const receivingNext = i === match.disruptor;
-      const role = document.createElement('p'); role.textContent = receivingNext ? '이번엔 물 받기!\n키보드 A / S / D' : '이번엔 방해하기!\n방향키 ← / ↓ / → · Space'; role.style.whiteSpace = 'pre-line';
+      const receivingNext = i === match.disruptor, keys = SEAT_KEYS[i];
+      const role = document.createElement('p'); role.textContent = receivingNext ? `이번엔 물 받기!\n내 키 그대로 ${keys.lanes.join(' / ')}` : `이번엔 방해하기!\n내 키 그대로 ${keys.lanes.join(' / ')} · 똥물 ${keys.dirty}`; role.style.whiteSpace = 'pre-line';
       const ready = document.createElement('button'); ready.className = 'ready-button'; ready.textContent = '준비 완료'; ready.setAttribute('aria-label', `${player.name} 준비 완료`);
       ready.addEventListener('click', () => { match.ready[i] = true; ready.disabled = true; ready.textContent = '✓ 준비됐어요'; if (match.ready.every(Boolean)) { match.nextRound(); beginCountdown(); } });
       card.append(role, ready);
     } else {
-      const score = document.createElement('strong'); score.textContent = match.scores[i].toLocaleString(); const unit = document.createElement('small'); unit.textContent = ' mL'; score.append(unit); card.append(score);
+      const score = document.createElement('strong'); score.textContent = match.scores[i].toLocaleString(); const unit = document.createElement('small'); unit.textContent = ' mL'; score.append(unit);
+      const ending = document.createElement('img'); ending.className = 'mini-ending'; ending.src = `assets/endings/${match.results[i].ending}.svg`; ending.alt = endings[match.results[i].ending].alt;
+      card.append(score, ending);
+      if (winner) { const crown = document.createElement('img'); crown.className = 'card-crown'; crown.src = 'assets/ui/winner-crown.svg'; crown.alt = '우승 왕관'; card.prepend(crown); }
     }
     $('result').querySelector('.result-cards').append(card);
   });
