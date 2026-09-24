@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fff8e8"><meta name="description" content="깨끗한 물은 받고, 똥물은 피하자! 한 기기에서 함께하는 귀여운 2인 대결 게임.">
+  <title>물 받아라! · 둘이서 첨벙첨벙</title>
+  <link rel="icon" href="assets/fx/drop-clean.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="물 받아라! 처음으로"><img src="assets/fx/drop-clean.svg" alt="">물 받아라<span>!</span></a>
+      <div class="header-right"><span class="local-badge"><i></i> 한 기기, 두 친구</span><button id="help-button" class="icon-button" aria-label="게임 방법">?</button></div>
+    </header>
+    <main>
+      <section id="setup" class="setup-screen">
+        <div class="hero-copy"><span class="eyebrow">둘이서 첨벙첨벙 · LOCAL 2P</span><h1>우정은 잠시,<br>물부터 <span>받아라!</span><svg viewBox="0 0 280 16" aria-hidden="true"><path d="M4 10 Q140 -4 276 8 M25 15 Q160 4 251 12"/></svg></h1><p>깨끗한 물은 쏙 받고, 똥물은 슥 피하고.<br>친구와 함께하는 엉뚱한 물 받기 대결!</p><div class="game-facts"><span>✌ 로컬 2인</span><span>◷ 45초 × 2라운드</span><span>⌨ 키보드 · 터치</span></div></div>
+        <div class="hero-art" aria-hidden="true"><span class="art-note">오늘은 내가 더 많이 받을 거야!</span><div class="art-dash"></div><img class="hero-faucet" src="assets/props/faucet.svg" alt=""><img class="hero-drop d1" src="assets/fx/drop-clean.svg" alt=""><img class="hero-drop d2" src="assets/fx/drop-clean.svg" alt=""><img class="hero-cup" src="assets/props/cup-sunny.svg" alt=""><img class="hero-friend" src="assets/characters/friend-idle.png" alt=""><img class="hero-splash" src="assets/fx/splash-clean.svg" alt=""><span class="art-star">✧</span><span class="art-caption">한 방울도 놓칠 수 없지.</span></div>
+        <form id="setup-form" class="setup-form">
+          <div class="setup-heading"><h2>함께할 친구들</h2><span>컵을 고르고 준비해 주세요</span></div>
+          <div class="player-cards">
+            <fieldset class="player-card player-one"><legend><span class="player-number">01</span> 먼저 물 받기 <span class="role-tag">A S D</span></legend><label for="name-0">이름</label><input id="name-0" name="player1" maxlength="12" placeholder="친구 1" autocomplete="off"><div class="color-row"><span>나의 컵</span><div class="color-picker" data-player="0"></div><img id="cup-preview-0" src="assets/props/cup-sunny.svg" alt="노랑 컵"></div></fieldset>
+            <fieldset class="player-card player-two"><legend><span class="player-number">02</span> 먼저 방해하기 <span class="role-tag">← ↓ →</span></legend><label for="name-1">이름</label><input id="name-1" name="player2" maxlength="12" placeholder="친구 2" autocomplete="off"><div class="color-row"><span>나의 컵</span><div class="color-picker" data-player="1"></div><img id="cup-preview-1" src="assets/props/cup-coral.svg" alt="코랄 컵"></div></fieldset>
+          </div>
+          <div class="start-row"><p><img src="assets/ui/dirty-action.svg" alt=""> 한 번씩 역할을 바꿔요.<br><strong>더 많은 물을 받은 친구가 승리!</strong></p><button id="start-button" class="primary-button" type="submit" disabled>그림 불러오는 중… <span>↗</span></button></div>
+          <p id="load-error" role="alert" hidden></p>
+        </form>
+        <div class="how-strip"><span><b>01</b> 물줄기를 따라 컵 이동</span><i>→</i><span><b>02</b> 똥물 예고를 보면 피하기</span><i>→</i><span><b>03</b> 역할 바꿔 한 번 더!</span></div>
+      </section>
+      <section id="game" class="game-screen" hidden>
+        <div class="scoreboard"><div><span id="round-label" class="eyebrow">ROUND 01 / 02</span><h2 id="receiver-label"></h2></div><div class="timer"><span>남은 시간</span><strong id="timer">00:45</strong></div><div class="score"><span>받은 물</span><strong><span id="score">0</span><small> mL</small></strong></div><button id="pause-button" class="icon-button" aria-label="일시정지"><img src="assets/ui/pause.svg" alt=""></button></div>
+        <div class="arena-wrap"><canvas id="arena" width="960" height="540" aria-label="세 레인의 경기장. 아래 버튼 또는 키보드로 조작하세요."></canvas><div id="arena-message" class="arena-message" aria-live="polite"></div></div>
+        <div class="control-panels"><section class="control-panel receiver-panel"><div class="control-heading"><h3>물 받기 <span id="receiver-name"></span></h3><span>물줄기를 따라가요!</span></div><div class="lane-buttons" id="cup-controls"></div></section><section class="control-panel disruptor-panel"><div class="control-heading"><h3>방해하기 <span id="disruptor-name"></span></h3><span id="source-status">물줄기를 옮겨요!</span></div><div class="disruptor-controls"><div class="lane-buttons" id="source-controls"></div><button id="dirty-button" class="dirty-button"><img src="assets/ui/dirty-action.svg" alt=""><span>똥물!</span><small id="dirty-status">6초 · 4회</small><kbd>SPACE</kbd></button></div></section></div>
+        <p class="game-tip">깨끗한 물 +10mL <span>·</span> 똥물은 한 번에 −100mL <span>·</span> ESC 일시정지</p>
+      </section>
+      <section id="result" class="result-screen" hidden aria-live="polite"></section>
+      <p class="rotate-hint">↻ 휴대폰을 가로로 돌리면 두 친구가 조작하기 더 편해요.</p>
+    </main>
+    <footer><span>작은 컵에 담는 커다란 승부.</span><span>MADE FOR TWO, PLAYED WITH A SPLASH.</span></footer>
+  </div>
+  <dialog id="pause-dialog"><span class="eyebrow">TAKE A LITTLE BREAK</span><h2>잠깐, 숨 고르기</h2><p>물도 시간도 잠시 멈췄어요.<br>두 친구가 준비되면 이어가세요.</p><button id="resume-button" class="primary-button">계속하기 →</button><button id="quit-button" class="text-button">이번 판을 끝내고 처음으로</button></dialog>
+  <dialog id="help-dialog"><span class="eyebrow">HOW TO PLAY</span><h2>같이 놀 준비됐나요?</h2><p>한 기기에서 두 친구가 함께해요.<br>45초씩, 한 번은 물 받기 · 한 번은 방해하기!</p><div class="help-rule"><b>물 받기 · A / S / D</b><p>좌·중앙·우 레인으로 컵을 옮겨 깨끗한 물을 받아요. 한 방울에 +10mL!</p></div><div class="help-rule"><b>방해하기 · ← / ↓ / →</b><p>물줄기를 옮겨 친구를 따돌려요. Space로 똥물 공격! 경고 후 나오며 맞으면 100mL가 줄어요. 한 라운드에 최대 4번!</p></div><p>터치는 아래 두 조작 패널을 사용하세요.<br>두 라운드에서 더 많은 물을 받은 친구가 승리!</p><button id="help-close" class="primary-button">알겠어요!</button></dialog>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

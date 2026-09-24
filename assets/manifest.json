@@ -1,0 +1,186 @@
+{
+  "version": 1,
+  "pathsRelativeTo": "assets/",
+  "palette": {
+    "paper": "#fff8e8",
+    "ink": "#493c32",
+    "clean": "#70cbe6",
+    "dirty": "#b58a60",
+    "sunny": "#f5ca62",
+    "coral": "#f29b89",
+    "sky": "#a3d9e8"
+  },
+  "assets": [
+    {
+      "id": "friend-idle",
+      "path": "characters/friend-idle.png",
+      "type": "png",
+      "width": 1238,
+      "height": 1271,
+      "transparent": true,
+      "usage": "shared character for both players; cup is separate"
+    },
+    {
+      "id": "cup-sunny",
+      "path": "props/cup-sunny.svg",
+      "width": 128,
+      "height": 144,
+      "type": "svg",
+      "anchor": [
+        55,
+        29
+      ],
+      "interior": {
+        "x": 25,
+        "y": 40,
+        "width": 60,
+        "height": 82
+      }
+    },
+    {
+      "id": "cup-coral",
+      "path": "props/cup-coral.svg",
+      "width": 128,
+      "height": 144,
+      "type": "svg",
+      "anchor": [
+        55,
+        29
+      ],
+      "interior": {
+        "x": 25,
+        "y": 40,
+        "width": 60,
+        "height": 82
+      }
+    },
+    {
+      "id": "cup-sky",
+      "path": "props/cup-sky.svg",
+      "width": 128,
+      "height": 144,
+      "type": "svg",
+      "anchor": [
+        55,
+        29
+      ],
+      "interior": {
+        "x": 25,
+        "y": 40,
+        "width": 60,
+        "height": 82
+      }
+    },
+    {
+      "id": "cup-water-fill",
+      "path": "props/cup-water-fill.svg",
+      "width": 128,
+      "height": 144,
+      "type": "svg"
+    },
+    {
+      "id": "faucet",
+      "path": "props/faucet.svg",
+      "width": 160,
+      "height": 128,
+      "type": "svg",
+      "anchor": [
+        124,
+        110
+      ]
+    },
+    {
+      "id": "drop-clean",
+      "path": "fx/drop-clean.svg",
+      "width": 64,
+      "height": 80,
+      "type": "svg"
+    },
+    {
+      "id": "stream-clean",
+      "path": "fx/stream-clean.svg",
+      "width": 64,
+      "height": 256,
+      "type": "svg",
+      "usage": "decoration only; draw discrete packets for gameplay"
+    },
+    {
+      "id": "splash-clean",
+      "path": "fx/splash-clean.svg",
+      "width": 160,
+      "height": 80,
+      "type": "svg"
+    },
+    {
+      "id": "drop-dirty",
+      "path": "fx/drop-dirty.svg",
+      "width": 64,
+      "height": 80,
+      "type": "svg"
+    },
+    {
+      "id": "stream-dirty",
+      "path": "fx/stream-dirty.svg",
+      "width": 64,
+      "height": 256,
+      "type": "svg",
+      "usage": "decoration only; draw discrete packets for gameplay"
+    },
+    {
+      "id": "splash-dirty",
+      "path": "fx/splash-dirty.svg",
+      "width": 160,
+      "height": 80,
+      "type": "svg"
+    },
+    {
+      "id": "dirty-warning",
+      "path": "ui/dirty-warning.svg",
+      "width": 80,
+      "height": 80,
+      "type": "svg"
+    },
+    {
+      "id": "dirty-action",
+      "path": "ui/dirty-action.svg",
+      "width": 80,
+      "height": 80,
+      "type": "svg"
+    },
+    {
+      "id": "lane-left",
+      "path": "ui/lane-left.svg",
+      "width": 80,
+      "height": 80,
+      "type": "svg"
+    },
+    {
+      "id": "lane-center",
+      "path": "ui/lane-center.svg",
+      "width": 80,
+      "height": 80,
+      "type": "svg"
+    },
+    {
+      "id": "lane-right",
+      "path": "ui/lane-right.svg",
+      "width": 80,
+      "height": 80,
+      "type": "svg"
+    },
+    {
+      "id": "pause",
+      "path": "ui/pause.svg",
+      "width": 80,
+      "height": 80,
+      "type": "svg"
+    },
+    {
+      "id": "winner-crown",
+      "path": "ui/winner-crown.svg",
+      "width": 128,
+      "height": 96,
+      "type": "svg"
+    }
+  ]
+}
