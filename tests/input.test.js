@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { installInput } from '../src/input.js';
+import { installInput, installGestureGuard } from '../src/input.js';
 
 test('independent pointers, seat-bound keys, keyboard repeat, cancellation, focus and visibility', () => {
   const win = new EventTarget(); const doc = new EventTarget();
@@ -35,4 +35,20 @@ test('independent pointers, seat-bound keys, keyboard repeat, cancellation, focu
   } finally {
     for (const [key, value] of Object.entries(old)) { if (value === undefined) delete globalThis[key]; else globalThis[key] = value; }
   }
+});
+
+test('gesture guard cancels pinch, pan, double-tap zoom and rapid second taps only', () => {
+  const root = new EventTarget(); installGestureGuard(root);
+  const fire = (type, props = {}) => {
+    const event = Object.assign(new Event(type, { cancelable: true }), props);
+    Object.defineProperty(event, 'timeStamp', { value: props.at ?? 0 });
+    root.dispatchEvent(event); return event.defaultPrevented;
+  };
+  assert.equal(fire('touchmove'), true);
+  for (const type of ['gesturestart', 'gesturechange', 'gestureend', 'dblclick']) assert.equal(fire(type), true);
+  assert.equal(fire('touchend', { at: 1000 }), false);
+  assert.equal(fire('touchend', { at: 1200 }), true);
+  assert.equal(fire('touchend', { at: 2000 }), false);
+  // Pointer events are never touched, so multi-touch play keeps working.
+  assert.equal(fire('pointerdown'), false);
 });
