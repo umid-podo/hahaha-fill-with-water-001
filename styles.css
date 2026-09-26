@@ -32,3 +32,7 @@
 .card-crown{position:absolute;top:-22px;left:50%;width:54px;transform:translateX(-50%) rotate(-8deg)}
 @media(max-width:540px){.background-picker{gap:8px}.background-option{font-size:12px;padding:6px}.ending-stage{width:160px;height:160px}.ending-caption{font-size:13px}.result-card .mini-ending{width:72px;height:72px}}
 @media(prefers-reduced-motion:reduce){.ending-drink{display:none}.ending-reaction,.ending-caption{opacity:1}}
+/* Game screen: no browser pinch, double-tap zoom, panning, text selection or long-press callout. */
+.game-screen{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.game-screen button,.game-screen canvas{touch-action:none}
+body:has(#game:not([hidden])),html:has(#game:not([hidden])){overscroll-behavior:none}

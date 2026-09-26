@@ -4,6 +4,24 @@ export const SEAT_KEYS = [
   { lanes: ['A', 'S', 'D'], dirty: 'W' },
   { lanes: ['←', '↓', '→'], dirty: '↑' },
 ];
+// iOS Safari ignores user-scalable=no, so browser gestures are blocked on the game
+// screen itself. Pointer events (and therefore multi-touch input) keep firing.
+export function installGestureGuard(root) {
+  const block = event => { if (event.cancelable) event.preventDefault(); };
+  // Pinch, pan and pull-to-refresh start from touchmove; it must not be passive.
+  root.addEventListener('touchmove', block, { passive: false });
+  // Non-standard Safari pinch events (older iOS still zooms without these).
+  for (const type of ['gesturestart', 'gesturechange', 'gestureend']) root.addEventListener(type, block, { passive: false });
+  root.addEventListener('dblclick', block);
+  // Fast repeated taps: cancel the second touchend so it cannot become a double-tap zoom.
+  // Buttons already acted on pointerdown; the click is only used by keyboards.
+  let lastTouchEnd = 0;
+  root.addEventListener('touchend', event => {
+    const now = event.timeStamp;
+    if (now - lastTouchEnd < 350) block(event);
+    lastTouchEnd = now;
+  }, { passive: false });
+}
 export function installInput({ command, seatCommand, pause }) {
   const held = new Set();
   const keyMap = {

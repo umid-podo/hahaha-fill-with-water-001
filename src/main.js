@@ -1,7 +1,7 @@
 import { CONFIG as C } from './config.js';
 import { Match } from './state.js';
 import { Renderer, loadAssets } from './render.js';
-import { installInput, SEAT_KEYS } from './input.js';
+import { installInput, installGestureGuard, SEAT_KEYS } from './input.js';
 import { BACKGROUNDS, drawBackground } from './backgrounds.js';
 const $ = id => document.getElementById(id);
 const colors = { sunny: ['노랑', '#f5ca62'], coral: ['코랄', '#f29b89'], sky: ['하늘', '#a3d9e8'] };
@@ -65,6 +65,7 @@ for (const [id, type] of [['cup-controls', 'cup'], ['source-controls', 'source']
 }
 $('dirty-button').dataset.command = 'dirty';
 const input = installInput({ command, seatCommand, pause });
+installGestureGuard($('game'));
 // A seat's keys and panel side never move; only the role behind them changes.
 function seatCommand(seat, action, lane) {
   if (!match) return;
