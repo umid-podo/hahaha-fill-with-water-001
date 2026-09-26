@@ -3,7 +3,8 @@ export const CONFIG = Object.freeze({
   emissionMs: 100, volumeMl: 10, flightMs: 650, cupCapacityMl: 250,
   dirtyInitialMs: 6000, dirtyWarningMs: 350, dirtyDurationMs: 600,
   dirtyCooldownMs: 8000, dirtyUses: 4, dirtyPenaltyMl: 100,
-  // Secret lemons: once per round, five slices drop quickly into a lane away from the water.
-  lemonCount: 5, lemonIntervalMs: 150, lemonFlightMs: 380,
-  lemonEarliestMs: 12000, lemonLatestMs: 36000, lemonEndingCount: 3,
+  // Secret lemons: two waves per round. Slices come out spaced apart but fall faster
+  // than water, into a lane away from the stream. One caught slice earns the lemon ending.
+  lemonWaves: [[10000, 20000], [26000, 36000]], lemonsPerWave: 3, lemonIntervalMs: 350,
+  lemonFlightMs: 480, lemonEndingCount: 1,
 });

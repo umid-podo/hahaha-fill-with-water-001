@@ -65,6 +65,26 @@ svg('endings/clean.svg', 240, 240, '엄지를 들고 활짝 웃는 친구', frie
     '<path d="M82 92 L93 81 L104 92 M136 92 L147 81 L158 92" fill="none" stroke-width="3.5"/>' + W_MOUTH,
     sparkle(200, 52, 14) + sparkle(36, 190, 10) + sparkle(210, 196, 8),
     front='<path d="M50 112 Q49 94 58 96 Q64 98 62 112" fill="' + CREAM + '" stroke-width="3.5"/><circle cx="57" cy="122" r="12" fill="' + CREAM + '"/><path d="M146 166 Q145 150 153 152 Q159 154 157 168" fill="' + CREAM + '" stroke-width="3.5"/><circle cx="152" cy="176" r="12" fill="' + CREAM + '"/>'))
+CUP_AT_MOUTH = '<g transform="translate(128 98) rotate(-24)"><path d="M0 4 L5 46 Q21 51 37 46 L42 4" fill="#d6f2fa"/><path d="M4 22 Q21 27 38 22 L35 44 Q21 48 7 44Z" fill="#70cbe6" stroke="none"/><ellipse cx="21" cy="4" rx="21" ry="5" fill="#eaf8fc"/></g>'
+# Final scene judge: the same friend with bushy brows and a long beard, tasting the water.
+svg('endings/judge.svg', 240, 240, '수염이 긴 물슐랭 심사위원 아저씨가 물을 마시는 모습', friend(
+    ['M146 150 Q180 168 150 142'],
+    '<path d="M78 74 Q92 64 106 72 M134 72 Q148 64 162 74" fill="none" stroke-width="6"/><path d="M82 90 Q92 97 102 90 M138 90 Q148 97 158 90" fill="none" stroke-width="3.5"/>',
+    '<path d="M18 30 L23 42 L36 43 L26 51 L30 64 L18 57 L7 64 L10 51 L1 43 L14 42Z" fill="#f5ca62" stroke-width="3"/>',
+    front='<path d="M84 112 Q84 132 94 150 Q104 182 120 214 Q136 182 146 150 Q156 132 156 112 Q138 126 120 122 Q102 126 84 112Z" fill="#f7f4ee"/><path d="M104 150 Q110 170 118 184 M134 150 Q130 168 124 180" fill="none" stroke="#d9d2c4" stroke-width="3"/><path d="M120 116 Q108 108 94 116 Q100 126 110 122 Q116 120 120 116 Q124 120 130 122 Q140 126 146 116 Q132 108 120 116Z" fill="#f7f4ee" stroke-width="3"/>'
+    + CUP_AT_MOUTH + '<circle cx="152" cy="138" r="11" fill="' + CREAM + '"/>'))
+# Space background: an alien visitor who came for the famous water.
+ALIEN = '#b8e39a'
+svg('endings/alien.svg', 240, 240, '컵의 물을 맛보는 초록 외계인',
+    '<path d="M96 52 Q84 26 70 18 M144 52 Q156 26 170 18" fill="none"/><circle cx="68" cy="16" r="8" fill="#f5ca62"/><circle cx="172" cy="16" r="8" fill="#f5ca62"/>'
+    + limb_ink('M96 168 Q70 176 64 150') + limb_ink('M144 166 Q176 158 160 132')
+    + f'<path d="M94 150 C88 172 90 196 96 214 Q104 222 114 214 L116 206 Q120 204 124 206 L126 214 Q136 222 144 214 C150 196 152 172 146 150" fill="{ALIEN}"/>'
+    + f'<path d="M96 168 Q70 176 64 150" fill="none" stroke="{ALIEN}" stroke-width="11"/><path d="M144 166 Q176 158 160 132" fill="none" stroke="{ALIEN}" stroke-width="11"/>'
+    + f'<ellipse cx="120" cy="100" rx="66" ry="56" fill="{ALIEN}"/>'
+    + '<ellipse cx="94" cy="96" rx="16" ry="22" fill="#2f2a33" transform="rotate(-18 94 96)"/><ellipse cx="146" cy="96" rx="16" ry="22" fill="#2f2a33" transform="rotate(18 146 96)"/><circle cx="89" cy="88" r="5" fill="white" stroke="none"/><circle cx="141" cy="88" r="5" fill="white" stroke="none"/>'
+    + '<path d="M112 132 Q120 138 128 132" fill="none" stroke-width="3.5"/>'
+    + '<g transform="translate(142 108) rotate(-18)"><path d="M0 4 L5 46 Q21 51 37 46 L42 4" fill="#d6f2fa"/><path d="M4 22 Q21 27 38 22 L35 44 Q21 48 7 44Z" fill="#70cbe6" stroke="none"/><ellipse cx="21" cy="4" rx="21" ry="5" fill="#eaf8fc"/></g>'
+    + f'<circle cx="160" cy="132" r="10" fill="{ALIEN}"/>')
 svg('fx/lemon.svg', 64, 64, '비밀 레몬 조각', lemon(32, 32, 26))
 manifest={'version':1,'pathsRelativeTo':'assets/','palette':{'paper':'#fff8e8','ink':INK,'clean':'#70cbe6','dirty':'#b58a60','sunny':'#f5ca62','coral':'#f29b89','sky':'#a3d9e8'},'assets':[{'id':'friend-idle','path':'characters/friend-idle.png','type':'png','width':1238,'height':1271,'transparent':True,'usage':'shared character for both players; cup is separate'},*entries]}
 (A/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')

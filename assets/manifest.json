@@ -211,6 +211,20 @@
       "type": "svg"
     },
     {
+      "id": "judge",
+      "path": "endings/judge.svg",
+      "width": 240,
+      "height": 240,
+      "type": "svg"
+    },
+    {
+      "id": "alien",
+      "path": "endings/alien.svg",
+      "width": 240,
+      "height": 240,
+      "type": "svg"
+    },
+    {
       "id": "lemon",
       "path": "fx/lemon.svg",
       "width": 64,

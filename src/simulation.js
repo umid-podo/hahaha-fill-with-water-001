@@ -2,7 +2,7 @@ import { CONFIG as C } from './config.js';
 
 // The event clock is independent of render frames. Every packet owns its lane.
 export class Simulation {
-  constructor({ lemonAt = randomLemonAt(), lemonOffset = 1 + Math.floor(Math.random() * 2) } = {}) {
+  constructor({ lemonTimes = randomLemonTimes(), lemonOffsets = lemonTimes.map(() => 1 + Math.floor(Math.random() * 2)) } = {}) {
     this.time = 0;
     this.score = 0;
     this.cupLane = 1;
@@ -20,15 +20,16 @@ export class Simulation {
     this.events = [];
     this.packetId = 0;
     // Lemons drop in a lane away from the water, so catching them means leaving the stream.
-    this.lemonAt = lemonAt;
-    this.lemonOffset = lemonOffset;
-    this.lemonLane = null;
+    this.lemonSchedule = lemonTimes.flatMap((start, wave) =>
+      Array.from({ length: C.lemonsPerWave }, (_, i) => ({ at: start + i * C.lemonIntervalMs, wave })));
+    this.lemonOffsets = lemonOffsets;
+    this.lemonLanes = lemonTimes.map(() => null);
     this.lemonsEmitted = 0;
     this.lemons = [];
     this.lemonsCaught = 0;
     this.finished = false;
   }
-  get nextLemonAt() { return this.lemonsEmitted < C.lemonCount ? this.lemonAt + this.lemonsEmitted * C.lemonIntervalMs : Infinity; }
+  get nextLemonAt() { return this.lemonSchedule[this.lemonsEmitted]?.at ?? Infinity; }
   get dirtyHits() { return this.penalizedBurstIds.size; }
   get sourceLocked() { return this.burst && this.time < this.burst.end; }
   get dirtyAvailable() { return !this.finished && this.dirtyUsesRemaining > 0 && this.time >= this.dirtyReadyAt; }
@@ -98,8 +99,10 @@ export class Simulation {
         this.nextEmissionAt += C.emissionMs;
       }
       if (this.nextLemonAt === next) {
-        this.lemonLane ??= (this.sourceLane + this.lemonOffset) % 3;
-        this.lemons.push({ id: ++this.lemonsEmitted, lane: this.lemonLane, emittedAt: next, arrivesAt: next + C.lemonFlightMs });
+        // Each wave's lane is fixed at its first slice; later faucet moves do not drag it.
+        const { wave } = this.lemonSchedule[this.lemonsEmitted];
+        this.lemonLanes[wave] ??= (this.sourceLane + this.lemonOffsets[wave]) % 3;
+        this.lemons.push({ id: ++this.lemonsEmitted, lane: this.lemonLanes[wave], emittedAt: next, arrivesAt: next + C.lemonFlightMs });
       }
       while (this.packets[0]?.arrivesAt === next) {
         const packet = this.packets.shift();
@@ -126,7 +129,7 @@ export class Simulation {
   }
 }
 
-export function randomLemonAt(random = Math.random) {
-  const span = (C.lemonLatestMs - C.lemonEarliestMs) / C.emissionMs;
-  return C.lemonEarliestMs + Math.floor(random() * (span + 1)) * C.emissionMs;
+export function randomLemonTimes(random = Math.random) {
+  return C.lemonWaves.map(([earliest, latest]) =>
+    earliest + Math.floor(random() * ((latest - earliest) / C.emissionMs + 1)) * C.emissionMs);
 }
