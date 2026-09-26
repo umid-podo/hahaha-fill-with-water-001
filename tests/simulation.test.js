@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Simulation, randomLemonAt } from '../src/simulation.js';
+import { Simulation, randomLemonTimes } from '../src/simulation.js';
 import { Match, endingFor } from '../src/state.js';
 
 test('first arrival at 750ms, exactly 443 packets before the deadline', () => {
@@ -53,7 +53,7 @@ test('input at emission time changes the new packet only', () => {
 test('60Hz, 120Hz and stalled frames produce the same outcome for a timestamped input trace', () => {
   const trace = [ [800, 'cup', 0], [1400, 'source', 0], [3000, 'source', 2], [3500, 'cup', 2], [6000, 'dirty'], [7000, 'cup', 1], [9000, 'source', 1], [14000, 'dirty'], [14400, 'cup', 0], [15000, 'cup', 1] ];
   const run = step => {
-    const s = new Simulation({ lemonAt: 14300, lemonOffset: 1 }); let index = 0;
+    const s = new Simulation({ lemonTimes: [14300, 30000], lemonOffsets: [1, 1] }); let index = 0;
     for (let time = step; time < 45000; time += step) {
       while (trace[index]?.[0] <= time) { const [at, type, lane] = trace[index++]; s.advance(at, [{ type, lane }]); }
       s.advance(time);
@@ -64,8 +64,8 @@ test('60Hz, 120Hz and stalled frames produce the same outcome for a timestamped 
 });
 test('match stores receiver scores, alternates roles, detects ties, and resets replay', () => {
   const m = new Match([{ name: 'A' }, { name: 'B' }]);
-  m.sim.score = 1000; m.sim.lemonsCaught = 3; m.finishRound();
-  assert.deepEqual(m.results[0], { score: 1000, lemons: 3, dirtyHits: 0, ending: 'lemon' }); m.nextRound(); assert.equal(m.receiver, 1);
+  m.sim.score = 1000; m.sim.lemonsCaught = 1; m.finishRound();
+  assert.deepEqual(m.results[0], { score: 1000, lemons: 1, dirtyHits: 0, ending: 'lemon' }); m.nextRound(); assert.equal(m.receiver, 1);
   m.sim.score = 900; m.sim.penalizedBurstIds.add(1); m.finishRound(); assert.equal(m.winner, 0);
   assert.equal(m.results[1].ending, 'dirty');
   m.scores[1] = 1000; assert.equal(m.winner, null);
@@ -73,30 +73,32 @@ test('match stores receiver scores, alternates roles, detects ties, and resets r
   assert.equal(replay.receiver, 1); assert.deepEqual(replay.scores, [0, 0]);
   assert.equal(replay.sim.packets.length, 0); assert.equal(replay.sim.dirtyUsesRemaining, 4);
 });
-test('five secret lemons fall fast into a lane away from the water and are counted, not scored', () => {
-  const stay = new Simulation({ lemonAt: 12000, lemonOffset: 1 }); stay.advance(13000);
-  assert.equal(stay.lemonLane, 2); assert.equal(stay.lemonsCaught, 0);
-  const s = new Simulation({ lemonAt: 12000, lemonOffset: 1 }); s.advance(12000, [{ type: 'cup', lane: 2 }]);
+test('two lemon waves: three spaced slices each, fast fall, lane away from the water', () => {
+  const stay = new Simulation({ lemonTimes: [12000, 30000], lemonOffsets: [1, 2] }); stay.advance(40000);
+  assert.deepEqual(stay.lemonLanes, [2, 0]); assert.equal(stay.lemonsEmitted, 6); assert.equal(stay.lemonsCaught, 0);
+  const s = new Simulation({ lemonTimes: [12000, 30000], lemonOffsets: [1, 2] }); s.advance(12000, [{ type: 'cup', lane: 2 }]);
   assert.equal(s.lemons.length, 1);
-  s.advance(12379); assert.equal(s.lemonsCaught, 0); const score = s.score;
-  s.advance(12380); assert.equal(s.lemonsCaught, 1);
-  s.advance(12980); assert.equal(s.lemonsCaught, 5); assert.equal(s.lemonsEmitted, 5);
-  assert.equal(s.score, score); // Water keeps falling in the centre lane, so the detour costs mL.
-  s.advance(20000); assert.equal(s.lemonsCaught, 5);
-  // The lane is fixed at the first slice; later faucet moves do not drag the lemons along.
-  const late = new Simulation({ lemonAt: 12000, lemonOffset: 2 }); late.advance(12200, [{ type: 'source', lane: 2 }]);
-  late.advance(12600, [{ type: 'cup', lane: 0 }]); assert.equal(late.lemonLane, 0);
-  late.advance(13000); assert.equal(late.lemonsCaught, 2); // Reached lane 0 at 12740: slices 4 and 5.
-  const end = new Simulation({ lemonAt: 44900 }); end.advance(45000); assert.equal(end.lemonsCaught, 0);
+  s.advance(12479); assert.equal(s.lemonsCaught, 0);
+  s.advance(12480); assert.equal(s.lemonsCaught, 1);
+  s.advance(12829); assert.equal(s.lemonsCaught, 1); // 350ms between slices.
+  s.advance(13180); assert.equal(s.lemonsCaught, 3);
+  s.advance(29000, [{ type: 'cup', lane: 0 }]); s.advance(31500); assert.equal(s.lemonsCaught, 6);
+  // A later faucet move does not drag the wave; reaching the lane late still catches the rest.
+  const late = new Simulation({ lemonTimes: [12000, 30000], lemonOffsets: [2, 1] });
+  late.advance(12100, [{ type: 'source', lane: 2 }]);
+  late.advance(12500, [{ type: 'cup', lane: 0 }]); assert.equal(late.lemonLanes[0], 0);
+  late.advance(13500); assert.equal(late.lemonsCaught, 2); // Arrived 12640: slices at 12830 and 13180.
+  const end = new Simulation({ lemonTimes: [44900, 44950] }); end.advance(45000); assert.equal(end.lemonsCaught, 0);
 });
-test('random lemon time stays inside the configured window on the emission grid', () => {
+test('random lemon waves stay inside their windows on the emission grid', () => {
   for (const r of [0, 0.5, 0.999999]) {
-    const at = randomLemonAt(() => r);
-    assert.ok(at >= 12000 && at <= 36000); assert.equal(at % 100, 0);
+    const [first, second] = randomLemonTimes(() => r);
+    assert.ok(first >= 10000 && first <= 20000); assert.ok(second >= 26000 && second <= 36000);
+    assert.equal(first % 100, 0); assert.equal(second % 100, 0);
   }
 });
-test('ending priority: 3+ lemons, then any dirty sip, otherwise clean', () => {
-  assert.equal(endingFor({ lemons: 3, dirtyHits: 2 }), 'lemon');
-  assert.equal(endingFor({ lemons: 2, dirtyHits: 1 }), 'dirty');
-  assert.equal(endingFor({ lemons: 2, dirtyHits: 0 }), 'clean');
+test('ending priority: any lemon, then any dirty sip, otherwise clean', () => {
+  assert.equal(endingFor({ lemons: 1, dirtyHits: 2 }), 'lemon');
+  assert.equal(endingFor({ lemons: 0, dirtyHits: 1 }), 'dirty');
+  assert.equal(endingFor({ lemons: 0, dirtyHits: 0 }), 'clean');
 });

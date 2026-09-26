@@ -36,3 +36,18 @@
 .game-screen{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .game-screen button,.game-screen canvas{touch-action:none}
 body:has(#game:not([hidden])),html:has(#game:not([hidden])){overscroll-behavior:none}
+.final-scene{display:flex;justify-content:center;gap:28px;flex-wrap:wrap;margin:22px 0 4px;opacity:0;animation:ending-fade .5s 2s forwards}
+.final-judge,.final-alien{position:relative;width:230px;background:#fffdf5;border:1.5px solid #dcccb0;border-radius:17px;padding:14px 12px 16px}
+.final-alien{background:#f1eefb;border-color:#c9c0e6}
+.final-scene img{display:block;width:150px;height:150px;margin:0 auto}
+.final-judge img{animation:ending-drink-loop 1.2s 2s ease-in-out 2}
+.michelin-badge{position:absolute;top:-16px;right:-16px;background:#f29b89;color:#fffdf5;border:2px solid var(--ink);border-radius:50%;width:74px;height:74px;display:grid;place-content:center;font-size:12px;font-weight:900;line-height:1.2;transform:rotate(12deg) scale(0);animation:badge-pop .45s 3s cubic-bezier(.3,1.6,.6,1) forwards}
+.michelin-badge b{color:#fff2bc;font-size:14px;letter-spacing:-1px}
+.michelin-badge small{font-size:8px;letter-spacing:1px}
+.bubble{margin:8px 0 0;font-size:13px;font-weight:800;line-height:1.5;color:#5d4b3a;background:#fff;border:1.5px solid #d6c8ad;border-radius:12px;padding:6px 10px;opacity:0;animation:ending-fade .4s forwards}
+.final-judge .bubble-1{animation-delay:3.3s}
+.final-alien .bubble-1{animation-delay:3.6s}.final-alien .bubble-2{animation-delay:4.6s;background:transparent;border:0;color:#8a7cb8}.final-alien .bubble-3{animation-delay:5.6s}
+@keyframes badge-pop{to{transform:rotate(12deg) scale(1)}}
+@keyframes ending-drink-loop{50%{transform:rotate(-5deg)}}
+@media(max-width:540px){.final-scene{gap:10px}.final-judge,.final-alien{width:100%}.michelin-badge{right:8px}}
+@media(prefers-reduced-motion:reduce){.final-scene,.bubble{opacity:1}.michelin-badge{transform:rotate(12deg)}}

@@ -181,7 +181,7 @@ $('help-button').addEventListener('click', () => { pause(); $('help-dialog').sho
 $('help-close').addEventListener('click', () => $('help-dialog').close());
 function goHome() { phase = 'setup'; match = null; input.clear(); screen('setup'); $('start-button').focus(); }
 const endings = {
-  lemon: { alt: '레몬에 반해 하트 눈이 된 친구', caption: (name, r) => `${name}, 비밀 레몬을 ${r.lemons}개나 먹었어요! 새콤달콤 사랑에 빠졌어요 ♥` },
+  lemon: { alt: '레몬에 반해 하트 눈이 된 친구', caption: (name, r) => `${name}, 비밀 레몬을 ${r.lemons}개 먹었어요! 새콤달콤 사랑에 빠졌어요 ♥` },
   dirty: { alt: '똥물을 마시고 깜짝 놀란 친구', caption: (name, r) => `${name}, 우웩! 똥물을 ${r.dirtyHits}번이나 마셔 버렸어요…` },
   clean: { alt: '엄지를 들고 활짝 웃는 친구', caption: name => `${name}, 똥물 없이 깨끗한 물만 꿀꺽! 엄지 척!` },
 };
@@ -196,6 +196,34 @@ function endingStage(player) {
   caption.textContent = endings[result.ending].caption(match.players[player].name, result);
   return [stage, caption];
 }
+// The alien reacts to the tasted cup with the same priority as the endings.
+const alienVerdicts = {
+  lemon: '오 정말 맛있군. 다음엔 친구들이랑 와야겠다_',
+  dirty: '우엑!!!!!! 야 너 뭐 콘텐츠 찍냐?!!!!_',
+  clean: '그냥 신선한 물맛이군_',
+};
+// After the last round: a bearded 물슐랭 judge tastes the winning cup (a tie tastes the
+// last cup). On the space background an alien visitor tastes it too.
+function finalScene() {
+  const tasted = match.winner ?? match.receiver, result = match.results[tasted];
+  const scene = document.createElement('section'); scene.className = 'final-scene'; scene.setAttribute('aria-label', '마지막 장면');
+  const figure = (className, src, alt, lines) => {
+    const box = document.createElement('div'); box.className = className;
+    const image = document.createElement('img'); image.src = src; image.alt = alt; box.append(image);
+    lines.forEach((text, i) => { const line = document.createElement('p'); line.className = `bubble bubble-${i + 1}`; line.textContent = text; box.append(line); });
+    return box;
+  };
+  const judge = figure('final-judge', 'assets/endings/judge.svg', '수염이 긴 물슐랭 심사위원 아저씨가 물을 마시는 모습', [`물슐랭 3스타! ${match.players[tasted].name}의 물… 음~ 훌륭하군!`]);
+  const badge = document.createElement('div'); badge.className = 'michelin-badge'; badge.innerHTML = '물슐랭 <b>★★★</b><small>3 STARS</small>';
+  judge.append(badge); scene.append(judge);
+  if (renderer.background === 'space') {
+    scene.append(figure('final-alien', 'assets/endings/alien.svg', '컵의 물을 맛보는 초록 외계인', [
+      '여기가 물맛이 좋다고 유명한 덴가? 삐빅_', '(꿀꺽)',
+      alienVerdicts[result.ending],
+    ]));
+  }
+  return scene;
+}
 // Player names are always assigned through textContent, never interpolated as markup.
 function endRound() {
   match.finishRound(); phase = match.roundIndex === 0 ? 'round-result' : 'match-result'; input.clear(); screen('result');
@@ -203,6 +231,7 @@ function endRound() {
   $('result').innerHTML = `<div class="result-illustration"></div><div class="eyebrow">${roundResult ? 'HALF TIME · SWITCH IT UP' : 'GOOD GAME · WELL PLAYED'}</div><h1></h1><p class="result-description"></p><div class="result-cards"></div><div class="result-actions"></div>`;
   $('result').querySelector('.result-illustration').append(...endingStage(match.receiver));
   $('result').querySelector('h1').textContent = roundResult ? '이번엔 역할 바꾸기!' : match.winner === null ? '둘 다 최고! 공동 우승' : `${match.players[match.winner].name} 승리!`;
+  if (!roundResult) $('result').querySelector('.result-description').after(finalScene());
   $('result').querySelector('.result-description').textContent = roundResult ? `${match.players[match.receiver].name}, ${match.sim.score.toLocaleString()}mL를 받았어요! 자리는 그대로, 두 친구 모두 준비하면 다음 라운드를 시작해요.` : '한 방울 한 방울, 멋진 승부였어요. 한 판 더 해볼까요?';
   match.players.forEach((player, i) => {
     const card = document.createElement('article'); card.className = 'result-card';
