@@ -196,6 +196,12 @@ function endingStage(player) {
   caption.textContent = endings[result.ending].caption(match.players[player].name, result);
   return [stage, caption];
 }
+// The alien reacts to the tasted cup with the same priority as the endings.
+const alienVerdicts = {
+  lemon: '오 정말 맛있군. 다음엔 친구들이랑 와야겠다_',
+  dirty: '우엑!!!!!! 야 너 뭐 콘텐츠 찍냐?!!!!_',
+  clean: '그냥 신선한 물맛이군_',
+};
 // After the last round: a bearded 물슐랭 judge tastes the winning cup (a tie tastes the
 // last cup). On the space background an alien visitor tastes it too.
 function finalScene() {
@@ -213,7 +219,7 @@ function finalScene() {
   if (renderer.background === 'space') {
     scene.append(figure('final-alien', 'assets/endings/alien.svg', '컵의 물을 맛보는 초록 외계인', [
       '여기가 물맛이 좋다고 유명한 덴가? 삐빅_', '(꿀꺽)',
-      result.dirtyHits ? '삐빅! 삐빅! 이건… 똥물 맛이다! 퉤퉤_' : '그냥 신선한 물맛이군_',
+      alienVerdicts[result.ending],
     ]));
   }
   return scene;
